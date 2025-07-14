@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Artificial Life - Particle Life Simulation</title>
+    <style>
+        /* Reset and base styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #000;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.4;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #000, #111);
+            border-bottom: 2px solid #00ff88;
+        }
+
+        .header h1 {
+            color: #00ff88;
+            text-shadow: 0 0 10px #00ff88;
+            margin-bottom: 5px;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        /* Main container */
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 120px);
+            position: relative;
+        }
+
+        /* Canvas container */
+        #canvas-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #000;
+            border: 1px solid #333;
+            position: relative;
+        }
+
+        #gameCanvas {
+            border: 1px solid #00ff88;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+        }
+
+        /* Stats display */
+        .stats {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #333;
+            font-size: 12px;
+            z-index: 100;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 15px;
+            background: rgba(17, 17, 17, 0.9);
+            border-top: 1px solid #333;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Panel toggles */
+        .panel-toggles {
+            display: flex;
+            gap: 10px;
+            margin-right: 20px;
+        }
+
+        /* Preset selector */
+        .preset-selector {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .preset-selector label {
+            color: #ccc;
+            font-size: 12px;
+        }
+
+        /* Buttons */
+        button,
+        .toggle-btn,
+        .control-btn,
+        .preset-btn,
+        .action-btn {
+            background: linear-gradient(135deg, #222, #333);
+            color: #fff;
+            border: 1px solid #555;
+            border-radius: 4px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: linear-gradient(135deg, #333, #444);
+            border-color: #00ff88;
+            box-shadow: 0 0 5px rgba(0, 255, 136, 0.3);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        /* Select elements */
+        select,
+        .preset-select {
+            background: #222;
+            color: #fff;
+            border: 1px solid #555;
+            border-radius: 4px;
+            padding: 8px;
+            font-family: inherit;
+            font-size: 12px;
+        }
+
+        select:focus {
+            border-color: #00ff88;
+            outline: none;
+        }
+
+        /* Panels */
+        .panel {
+            position: fixed;
+            background: rgba(17, 17, 17, 0.95);
+            border: 2px solid #333;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            transform: translateX(-1000%);
+            transition: transform 0.3s ease;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .panel.visible {
+            transform: translateX(0);
+        }
+
+        .options-panel {
+            top: 20px;
+            right: 20px;
+            width: 350px;
+        }
+
+        .rules-panel {
+            top: 20px;
+            left: 20px;
+            width: max-content;
+            max-width: calc(100vw - 40px);
+        }
+
+        .presets-panel {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 400px;
+        }
+
+        .presets-panel.visible {
+            transform: translate(-50%, -50%);
+        }
+
+        .panel-header {
+            background: linear-gradient(135deg, #333, #444);
+            padding: 15px;
+            border-bottom: 1px solid #555;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-header h3 {
+            color: #00ff88;
+            margin: 0;
+        }
+
+        .panel-close {
+            background: #d33;
+            border: none;
+            color: #fff;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .panel-close:hover {
+            background: #f44;
+        }
+
+        .panel-content {
+            padding: 20px;
+        }
+
+        .panel-actions {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #333;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        /* Options grid */
+        .options-grid {
+            display: grid;
+            gap: 15px;
+        }
+
+        .option-item {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #444;
+            border-radius: 6px;
+            padding: 12px;
+        }
+
+        .option-label {
+            font-weight: bold;
+            color: #00ff88;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+
+        .option-value {
+            color: #ccc;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .option-controls {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .option-btn {
+            padding: 4px 8px;
+            font-size: 11px;
+            min-width: 30px;
+        }
+
+        .option-input {
+            background: #222;
+            color: #fff;
+            border: 1px solid #555;
+            border-radius: 3px;
+            padding: 4px 6px;
+            width: 80px;
+            font-family: inherit;
+            font-size: 11px;
+        }
+
+        .option-input:focus {
+            border-color: #00ff88;
+            outline: none;
+        }
+
+        /* Rules grid */
+        .rules-grid-container {
+            overflow-x: auto;
+            max-width: 100%;
+        }
+
+        .rules-grid {
+            display: grid;
+            gap: 2px;
+            min-width: 600px;
+        }
+
+        .rules-cell {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 8px;
+            font-size: 11px;
+            min-height: 120px;
+        }
+
+        .rules-cell.rules-header {
+            background: linear-gradient(135deg, #333, #444);
+            font-weight: bold;
+            text-align: center;
+            color: #00ff88;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .rules-cell.rules-type {
+            background: linear-gradient(135deg, #222, #333);
+            font-weight: bold;
+            color: #00ff88;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 120px;
+        }
+
+        .rule-inputs {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            height: 100%;
+            position: relative;
+        }
+
+        .force-section,
+        .collision-section {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .input-group label {
+            font-size: 10px;
+            color: #ccc;
+            min-width: 45px;
+        }
+
+        .rule-input,
+        .create-input {
+            background: #222;
+            color: #fff;
+            border: 1px solid #555;
+            border-radius: 2px;
+            padding: 2px 4px;
+            width: 50px;
+            font-size: 10px;
+        }
+
+        .rule-checkbox {
+            margin-right: 4px;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            font-size: 10px;
+            color: #ccc;
+        }
+
+        .create-particles {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2px;
+            margin-top: 4px;
+        }
+
+        .create-group {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .create-label {
+            font-size: 9px;
+            color: #ccc;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .type-label {
+            font-size: 8px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .type-label.red {
+            color: #ff4444;
+        }
+
+        .type-label.green {
+            color: #44ff44;
+        }
+
+        .type-label.blue {
+            color: #4444ff;
+        }
+
+        .type-label.yellow {
+            color: #ffff44;
+        }
+
+        .rule-indicator {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            border: 1px solid #555;
+        }
+
+        .rule-indicator.force-attract {
+            background: #4f4;
+        }
+
+        .rule-indicator.force-repel {
+            background: #f44;
+        }
+
+        .rule-indicator.force-neutral {
+            background: #888;
+        }
+
+        .rule-indicator.has-collision {
+            border-color: #ff0;
+            box-shadow: 0 0 4px #ff0;
+        }
+
+        /* Rules controls */
+        .rules-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 11px;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #333;
+        }
+
+        .rules-btn {
+            padding: 6px 10px;
+            font-size: 11px;
+        }
+
+        /* Notifications */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(17, 17, 17, 0.95);
+            border-radius: 6px;
+            padding: 15px 20px;
+            z-index: 2000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            border-left: 4px solid #00ff88;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification-error {
+            border-left-color: #f44;
+        }
+
+        .notification-warning {
+            border-left-color: #fa4;
+        }
+
+        .notification-success {
+            border-left-color: #4f4;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .panel {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                width: 100%;
+                max-height: 100vh;
+                border-radius: 0;
+                transform: translateY(100%);
+            }
+
+            .panel.visible {
+                transform: translateY(0);
+            }
+
+            .rules-grid {
+                min-width: auto;
+                width: 100%;
+            }
+
+            .create-particles {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #222;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #777;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🧬 Artificial Life</h1>
+        <div class="subtitle">Particle Life Simulation - Emergent Behaviors & Complex Systems</div>
+    </div>
+
+    <div class="main-container">
+        <div id="canvas-container">
+            <!-- Canvas will be inserted here by JavaScript -->
+        </div>
+
+        <!-- Controls and stats will be created dynamically by UIManager -->
+    </div>
+
+    <!-- Options Panel will be created dynamically by UIManager -->
+
+    <!-- Rules Panel will be created dynamically by UIManager -->
+
+    <!-- Presets Panel will be created dynamically by UIManager -->
+
+    <!-- Main JavaScript Module -->
+    <script type="module">
+        import { Game } from './src/core/Game.js';
+
+        // Initialize the game when the page loads
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                console.log('🚀 Starting Particle Life Simulation...');
+
+                // Create and initialize the game
+                const game = new Game();
+                await game.initialize(document.body);
+
+                // Make game available globally for debugging
+                window.game = game;
+
+                console.log('✅ Particle Life Simulation started successfully!');
+                console.log('🎮 Use keyboard controls or UI panels to interact');
+                console.log('📊 Type "game.logStats()" in console for detailed statistics');
+
+            } catch (error) {
+                console.error('❌ Failed to start simulation:', error);
+                document.body.innerHTML = `
+                    <div style="color: red; text-align: center; padding: 50px; font-family: monospace;">
+                        <h2>⚠️ Simulation Failed to Start</h2>
+                        <p>Error: ${error.message}</p>
+                        <p>Please check the browser console for details.</p>
+                        <p>Make sure you're running this from a web server (not file://).</p>
+                    </div>
+                `;
+            }
+        });
+
+        // Handle unload
+        window.addEventListener('beforeunload', () => {
+            if (window.game) {
+                window.game.cleanup();
+            }
+        });
+    </script>
+</body>
+</html>

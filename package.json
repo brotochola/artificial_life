@@ -1,0 +1,33 @@
+{
+    "name": "artificial-life-pixi",
+    "version": "1.0.0",
+    "description": "GPU-accelerated particle life simulation using PixiJS",
+    "main": "index.html",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview",
+        "serve": "python -m http.server 8000"
+    },
+    "dependencies": {
+        "pixi.js": "^8.0.0"
+    },
+    "devDependencies": {
+        "vite": "^5.0.0"
+    },
+    "type": "module",
+    "keywords": [
+        "particle-life",
+        "pixijs",
+        "gpu-acceleration",
+        "webgl",
+        "simulation",
+        "artificial-life"
+    ],
+    "author": "Your Name",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/yourusername/artificial-life-pixi.git"
+    }
+}
